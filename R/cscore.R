@@ -50,27 +50,65 @@ rank2cscore = function(rank, rank_table){
   return(score)
 }
 
+
+#' Function for adding cscores to an Upstream DB using a list with database and rank columns
+#' @import dplyr
+#' @export
+add_scores = function(db, df_scores, add_by =  c(Database = "database", Kinase_Rank = "rank")){
+  dbs = df_scores %>%
+    pull(database) %>%
+    unique()
+  dbs_found  = dbs %in% db$Database
+  if (!all(dbs_found)){
+    stop(paste("Some databases in scores not found in upstream db, check spelling: ", dbs[!dbs_found]))
+  }
+
+  ndistinct = df_scores %>%
+    distinct(database, rank) %>%
+    nrow()
+
+  if(ndistinct != nrow(df_scores)){
+    stop("Not all entries in scores have unique mapping")
+  }
+
+  db %>%
+    left_join(df_scores, by = add_by)
+}
+
 #' Function for calculating (normalized) weights based on c-scores
 #' @import dplyr
 #' @export
-cscore2w= function(dframe, subvar = "ID", upvar = "Kinase_name", cvar = "cscore", wthr = 0){
-  dbw = dframe %>%
-    group_by(dbframe %>%  select(subvar, upvar)) %>%
-    dplyr::summarise(w = 1 - prod(1 - cvar)) %>%
-    ungroup()
+cscore2w= function(dbframe, sub.var = "ID", up.var = "Kinase_Name", value.var = "cscore", na.wt = 0){
+  dbframe$cvar = dbframe %>%
+    pull(value.var)
+  dbframe$up.var = dbframe %>%
+    pull(up.var)
+  dbframe$sub.var = dbframe %>%
+    pull(sub.var)
+
+  dbw = dbframe %>%
+    group_by(sub.var, up.var)%>%
+    dplyr::summarise(.w = 1 - prod(1 - cvar)) %>%
+    ungroup() %>%
+    pivot_wider(id_cols = sub.var, names_from = up.var, values_from = ".w") %>%
+    pivot_longer(-sub.var, values_to = ".w", names_to = up.var) %>%
+    mutate(w = ifelse(is.na(.w), na.wt, .w))
 
   subsum = dbw %>%
-    filter(w > wthr) %>%
-    group_by(dbw %>%  select(subvar)) %>%
-    dplyr::summarise(sup_count = n(),
+    group_by(sub.var) %>%
+    dplyr::summarise(sup_count = sum(!is.na(.w)),
                      sup_mean_weight = mean(w),
                      sup_sum_weight = sum(w)) %>%
     ungroup()
 
+
+
   dbw = dbw %>%
-    left_join(subsum, by = "ID") %>%
+    left_join(subsum, by = "sub.var") %>%
     mutate(wn = w/sup_sum_weight)
 
+  colnames(dbw)[1:2] = c(sub.var, up.var)
+  return(dbw)
 }
 
 
