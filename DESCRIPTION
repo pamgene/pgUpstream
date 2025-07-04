@@ -1,7 +1,7 @@
 Package: pgUpstream
 Type: Package
 Title: Upstream Kinase analysis
-Version: 1.4.1
+Version: 1.4.2
 Author: Rik de Wijn
 Description: Generic methods for Upstream Kinase Analysis, intended for use with Bionavigator upstream apps
 License: (C) PamGene 2018
