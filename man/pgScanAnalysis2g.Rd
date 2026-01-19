@@ -9,7 +9,14 @@ pgScanAnalysis0(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analy
 pgScanAnalysis2g_np(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis using binary grouping based on the grp column in df, no parallel processing
 pgScanAnalysis0_np(df, dbFrame, dbWeights, scanRank, nPermutations = 500) UKA analysis based on a single column (LFC) in df, no grouping, no parallel processing}
 \usage{
-pgScanAnalysis2g(df, dbFrame, dbWeights, scanRank, nPermutations = 500)
+pgScanAnalysis2g(
+  df,
+  dbFrame,
+  dbWeights,
+  scanRank,
+  nPermutations = 500,
+  bootstrap = FALSE
+)
 }
 \arguments{
 \item{df}{long format data frame with columns ID, colSeq, value, grp}
@@ -21,6 +28,8 @@ pgScanAnalysis2g(df, dbFrame, dbWeights, scanRank, nPermutations = 500)
 \item{scanRank}{vector of ranks to scan}
 
 \item{nPermutations}{number of permutations to use}
+
+\item{bootstrap}{logical, if TRUE, a bootstrap sample of the observations is used.}
 }
 \value{
 a list of data frames, one for each scanRank

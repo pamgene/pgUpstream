@@ -10,6 +10,7 @@
 #' @param dbWeights named vector of weights for each database, must match the names in dbFrame
 #' @param scanRank vector of ranks to scan
 #' @param nPermutations number of permutations to use
+#' @param bootstrap logical, if TRUE, a bootstrap sample of the observations is used.
 #' @return a list of data frames, one for each scanRank
 #' @import pgFCS
 #' @import dplyr
@@ -24,7 +25,8 @@
 pgScanAnalysis2g = function(df     ,dbFrame,
                                 dbWeights,
                                 scanRank,
-                                nPermutations = 500){
+                                nPermutations = 500,
+                                 bootstrap = FALSE){
   #run two group.
   #add dbWeight
   dbFrame = dbFrame %>%
@@ -35,6 +37,11 @@ pgScanAnalysis2g = function(df     ,dbFrame,
   df = ixList[[2]]
   X = acast(df, colSeq~ID, fun.aggregate = mean, value.var = "value")
   grp = acast(df, colSeq~ID, value.var = "grp")[,1]
+  if(bootstrap){
+    bIdx = sample(1:length(grp), replace = TRUE)
+    grp = grp[bIdx]
+    X = X[bIdx,]
+  }
   grp = as.factor(grp)
   nCores = detectCores()
   cl = makeCluster(nCores)
