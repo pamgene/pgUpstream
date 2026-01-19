@@ -4,11 +4,7 @@
 \alias{add_scores}
 \title{Function for adding cscores to an Upstream DB using a list with database and rank columns}
 \usage{
-add_scores(
-  db,
-  df_scores,
-  add_by = c(Database = "database", Kinase_Rank = "rank")
-)
+add_scores(db, scores_df, add_by = c("Database", "Kinase_Rank"))
 }
 \description{
 Function for adding cscores to an Upstream DB using a list with database and rank columns

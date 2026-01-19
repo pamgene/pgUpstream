@@ -9,7 +9,8 @@ cscore2w(
   sub.var = "ID",
   up.var = "Kinase_Name",
   value.var = "cscore",
-  na.wt = 0
+  na.wt = 0,
+  norm_func
 )
 }
 \description{

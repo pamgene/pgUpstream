@@ -4,10 +4,7 @@
 \alias{cscore00}
 \title{Function for simple c-scoring on standard upstream DB}
 \usage{
-cscore00(
-  db,
-  rank_table = data.frame(rank = c(0, 1, 6, 12), score = c(0.9, 0.7, 0.5, 0))
-)
+cscore00(db, scores_df, norm_func)
 }
 \description{
 Function for simple c-scoring on standard upstream DB

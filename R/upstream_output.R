@@ -7,6 +7,15 @@ scorePlot = function(aResult, plotorder = "score"){
   sp = makeScorePlot(aFull, plotorder)
 }
 
+#' Create a score plot for upstream kinase analysis results
+#' Generates a boxplot showing kinase scores with point overlays indicating specificity and peptide set size
+#'
+#' @param aFrame data frame containing upstream kinase analysis results with columns ClassName, combinedScore, NormalizedSetStat, pFeatureScore, nFeatures
+#' @param plotorder ordering method for kinases: "Median Score", "Max Score", or "Statistic"
+#' @return a ggplot object showing the score plot
+#' @import ggplot2
+#' @import scales
+#' @import dplyr
 #' @export
 makeScorePlot = function (aFrame, plotorder = "Median Score") {
   if (plotorder == "Median Score") {
@@ -127,6 +136,12 @@ makeDetailsTable = function(df, dbFrame, scanRank = NULL, minPScore = NULL) {
     arrange(Kinase_Rank, -as.integer(ID))
 }
 
+#' Create summary statistics for upstream kinase analysis results
+#' Calculates summary statistics grouped by kinase class name
+#'
+#' @param df data frame containing upstream kinase analysis results with columns ClassName, pFeatureScore, pPhenoScore, combinedScore, NormalizedSetStat, delta, nFeatures
+#' @return a data frame with summary statistics for each kinase class, ordered by median score
+#' @import dplyr
 #' @export
 makeSummary = function(df) {
   aSum = df %>%

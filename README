@@ -5,6 +5,6 @@ Author: Rik de Wijn
 Description: Generic methods for Upstream Kinase Analysis, intended for use with Bionavigator upstream apps
 License: (C) PamGene 2018
 LazyData: TRUE
-Date: 2018-3-21
+Date: 2026-01-19
 Imports: bnutil, data.table, doParallel, dplyr, foreach, ggplot2 (>= 2.2.1), pgFCS (>= 1.1), plyr, reshape2, scales
 RoxygenNote: 6.0.1
