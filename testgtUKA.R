@@ -42,11 +42,23 @@ grp = data_in %>%
 
 grp = grp[,1] %>%  as.factor()
 
-gresult = gtUKA(X, grp, dbw)
+gresult = gtUKA(X, grp, dbw) # with weights
 
 gresult = gresult %>%
   filter(n_substrates > 2) %>%
   arrange(p_value)
+
+# binarized (pretty random threshold)
+dbw = dbw %>%
+  filter(dbw$wn > 0.017) %>%
+  mutate(wb = 1)
+
+bresult = gtUKA(X, grp, dbw, weight_id = "wb") # with binary weights
+bresult = bresult %>%
+  filter(n_substrates > 2) %>%
+  arrange(p_value)
+
+
 
 
 
