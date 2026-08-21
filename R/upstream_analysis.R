@@ -3,10 +3,17 @@
 #'
 #' @param df long format data frame with columns ID, colSeq, value, and grp (latter only for comparison mode)
 #' @param dbFrame data frame with the UKA database
-#' @param scores_df data frame with C-scores for normalization, containing columns Database, Kinase_Rank, cscore
+#' @param scores_df data frame with C-scores for normalization. When score_var
+#'   is "Kinase_Rank" (default), must contain columns Database, Kinase_Rank,
+#'   cscore, matched by exact equality. Otherwise, must contain columns
+#'   Database, <score_var>, cscore, matched against ascending per-Database
+#'   thresholds (see score2cscore()).
 #' @param nPermutations number of permutations to use, default 500
 #' @param norm_func normalization function, default "log10"
 #' @param ukaType analysis type, either "Comparison" for two-group comparison or "FC" for fold-change analysis
+#' @param score_var which column in dbFrame to match scores_df against:
+#'   "Kinase_Rank" (default, exact match) or a continuous score column name
+#'   (e.g. "Kinase_Score", matched against ascending per-Database thresholds)
 #' @return a data frame with UKA results ordered by combined score
 #' @import pgFCS
 #' @import reshape2
@@ -14,9 +21,10 @@
 pgCscoreAnalysis <- function(df, dbFrame, scores_df,
                              nPermutations = 500,
                              norm_func = "log10",
-                             ukaType) {
+                             ukaType,
+                             score_var = "Kinase_Rank") {
   # unified function for both comparison and FC analysis
-  dbFrame <- cscore00(db = dbFrame, scores_df = scores_df, norm_func = norm_func)
+  dbFrame <- cscore00(db = dbFrame, scores_df = scores_df, norm_func = norm_func, score_var = score_var)
   # only keep those IDs that are found in both db and data
   ixList <- intersectById(dbFrame, df)
   dbFrame <- ixList[[1]]

@@ -1,12 +1,24 @@
 # methods for c-scoring
 
 #' Function for simple c-scoring on standard upstream DB
+#' @param score_var which column to match scores_df against: "Kinase_Rank"
+#'   (default) does an exact-match join on Database x Kinase_Rank via
+#'   add_scores(); any other value is treated as a continuous score column
+#'   (e.g. "Kinase_Score") matched against ascending per-Database thresholds
+#'   in scores_df via add_scores_by_score()
 #' @import dplyr
 #' @export
-cscore00 <- function(db, scores_df, norm_func) {
-  result <- db %>%
-    distinct(ID, Kinase_Name, PepProtein_PhosLink, Database, .keep_all = TRUE) %>%
-    add_scores(., scores_df = scores_df, add_by = c("Database", "Kinase_Rank")) %>%
+cscore00 <- function(db, scores_df, norm_func, score_var = "Kinase_Rank") {
+  db_dedup <- db %>%
+    distinct(ID, Kinase_Name, PepProtein_PhosLink, Database, .keep_all = TRUE)
+
+  db_scored <- if (score_var == "Kinase_Rank") {
+    db_dedup %>% add_scores(scores_df = scores_df, add_by = c("Database", "Kinase_Rank"))
+  } else {
+    db_dedup %>% add_scores_by_score(scores_df = scores_df, score_col = score_var)
+  }
+
+  result <- db_scored %>%
     cscore2w(
       sub.var = "ID",
       up.var = "Kinase_Name",
@@ -60,10 +72,10 @@ cscore2w <- function(dbframe, sub.var = "ID", up.var = "Kinase_Name", value.var 
 }
 
 
-#' Function for adding cscores to an Upstream DB using a list with database and rank columns
-#' @import dplyr
-#' @export
-add_scores <- function(db, scores_df, add_by = c("Database", "Kinase_Rank")) {
+#' Check that every Database in scores_df is present in db, used by both
+#' add_scores() and add_scores_by_score() before they attempt any matching
+#' @noRd
+validate_scores_df_databases <- function(db, scores_df) {
   dbs <- scores_df %>%
     pull(Database) %>%
     unique()
@@ -71,6 +83,14 @@ add_scores <- function(db, scores_df, add_by = c("Database", "Kinase_Rank")) {
   if (!all(dbs_found)) {
     stop(paste("Some databases in scores not found in upstream db, check spelling: ", dbs[!dbs_found]))
   }
+}
+
+
+#' Function for adding cscores to an Upstream DB using a list with database and rank columns
+#' @import dplyr
+#' @export
+add_scores <- function(db, scores_df, add_by = c("Database", "Kinase_Rank")) {
+  validate_scores_df_databases(db, scores_df)
 
   ndistinct <- scores_df %>%
     distinct(Database, Kinase_Rank) %>%
@@ -94,6 +114,56 @@ rank2cscore <- function(rank, rank_table) {
     score <- ifelse(rank >= rank_table$rank[i], rank_table$score[i], score)
   }
   return(score)
+}
+
+
+#' Function for converting a per-Database continuous score metric to a
+#' c-score using ascending threshold breakpoints within each Database. A
+#' row's cscore is that of the highest threshold its score meets or exceeds,
+#' for the Database it belongs to. A Database with a single threshold row
+#' gets a flat cscore regardless of the actual score value (e.g. for
+#' databases with no real score concept).
+#' @param score numeric vector of raw per-row scores
+#' @param database character vector of Database values, same length as score
+#' @param score_table data.frame with columns Database, <score_col>, cscore
+#' @param score_col name of the score column in score_table, default "Kinase_Score"
+#' @import dplyr
+#' @export
+score2cscore <- function(score, database, score_table, score_col = "Kinase_Score") {
+  result <- rep(NA_real_, length(score))
+  for (db in unique(score_table$Database)) {
+    tbl <- score_table[score_table$Database == db, , drop = FALSE]
+    tbl <- tbl[order(tbl[[score_col]]), ]
+    idx <- database == db
+    if (!any(idx)) next
+    if (nrow(tbl) == 1) {
+      result[idx] <- tbl$cscore[1]
+      next
+    }
+    s <- rep(tbl$cscore[1], sum(idx))
+    for (i in 2:nrow(tbl)) {
+      s <- ifelse(score[idx] >= tbl[[score_col]][i], tbl$cscore[i], s)
+    }
+    result[idx] <- s
+  }
+  return(result)
+}
+
+
+#' Function for adding cscores to an Upstream DB using a continuous
+#' per-Database score metric (e.g. Kinase_Score), matched against ascending
+#' thresholds instead of an exact Kinase_Rank match (see add_scores())
+#' @param db data frame with the upstream database, must contain a Database
+#'   column and the column named by score_col
+#' @param scores_df data.frame with columns Database, <score_col>, cscore
+#' @param score_col name of the score column to match on, default "Kinase_Score"
+#' @import dplyr
+#' @export
+add_scores_by_score <- function(db, scores_df, score_col = "Kinase_Score") {
+  validate_scores_df_databases(db, scores_df)
+
+  db$cscore <- score2cscore(db[[score_col]], db$Database, scores_df, score_col)
+  return(db)
 }
 
 
